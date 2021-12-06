@@ -1,5 +1,6 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
+import { Citadel } from "../typechain";
 
 function pickTenChars() {
   return new Array(10)
@@ -9,10 +10,14 @@ function pickTenChars() {
 }
 
 describe("Citadel", function () {
-  it("can find a successful code within 100 tries", async function () {
+  let citadel: Citadel;
+  beforeEach(async function () {
     const Citadel = await ethers.getContractFactory("Citadel");
-    const citadel = await Citadel.deploy();
+    citadel = await Citadel.deploy();
     await citadel.deployed();
+  });
+
+  it("can find a successful code within 100 tries", async function () {
     // This is the token id of the runner used to perform the action
     // For now its unused
     const tokenId = 0;

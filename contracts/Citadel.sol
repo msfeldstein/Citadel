@@ -17,21 +17,58 @@ contract Citadel {
     address private constant DNA_CONTRACT =
         0xfDac77881ff861fF76a83cc43a1be3C317c6A1cC;
 
-    function deactivateSecurityApparatus(uint256 runnerId, string memory key)
+    struct SecurityState {
+        uint8 camerasActive;
+        bool securityApparatusActive;
+        bool gasDeployed;
+        bool securityForcesDeployed;
+    }
+
+    mapping(uint256 => bool) cameraJammers;
+
+    SecurityState public securityState = SecurityState(10, true, true, true);
+
+    function jamCamera(uint256 runnerId) public {
+        require(
+            IRunners(RUNNER_CONTRACT).ownerOf(runnerId) == msg.sender,
+            "Runner Impersonation"
+        );
+        require(!cameraJammers[runnerId], "Camera is already down");
+        require(securityState.camerasActive > 0, "LFG already!");
+        securityState.camerasActive--;
+    }
+
+    function camerasJammed() public view returns (bool) {
+        return securityState.camerasActive == 0;
+    }
+
+    function deactivateSecurityApparatus(uint256 runnerId, string calldata key)
         public
-        view
-        returns (bool)
     {
         require(
             IRunners(RUNNER_CONTRACT).ownerOf(runnerId) == msg.sender,
             "Runner Impersonation"
         );
-        // Get the hash of the senders address, the runners tokenId, and the key passed
+        // Get the hash of the senders address, the runners tokenId, and the key passedp
         // This way the key will be different for everyone and they can't just share
         bytes32 sig = keccak256(abi.encodePacked(msg.sender, runnerId, key));
         uint256 bits = uint256(sig);
         // With a difficulty of 2 we require the last 2 bits to be 0 which gives a 25% hit rate
-        uint256 mask = 0x03; // 0x03 is 00000011, aka a bytte with the last 2 bits set to true
-        return bits & mask == 0;
+        uint256 mask = 0x03; // 0x03 is 00000011, aka a byte with the last 2 bits set to true
+        require(bits & mask == 0, "INVALID_CODE/ip has been logged");
+
+        securityState.securityApparatusActive = false;
+    }
+
+    function securityApparatusDeactivated() public view returns (bool) {
+        return !securityState.securityApparatusActive;
+    }
+
+    function vulnerable() public view returns (bool) {
+        return
+            securityState.camerasActive == 0 &&
+            !securityState.securityApparatusActive &&
+            !securityState.gasDeployed &&
+            !securityState.securityForcesDeployed;
     }
 }

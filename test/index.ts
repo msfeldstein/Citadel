@@ -51,10 +51,14 @@ describe("Citadel", function () {
       waffle.provider
     );
     for (let i = 1; i <= 10; i++) {
+      const camerasJammed = await citadel.camerasJammed();
+      expect(camerasJammed).to.be.false;
       const owner = await runnersContract.ownerOf(i);
       const connectedCitadel = await useAccount(owner);
       await connectedCitadel.jamCamera(i);
     }
+    const camerasJammed = await citadel.camerasJammed();
+    expect(camerasJammed).to.be.true;
   });
 
   it("can be attacked by a horde", async function () {});

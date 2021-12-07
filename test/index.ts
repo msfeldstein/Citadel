@@ -23,6 +23,10 @@ describe("Citadel", function () {
       method: "hardhat_impersonateAccount",
       params: [account],
     });
+    await hre.network.provider.send("hardhat_setBalance", [
+      account,
+      "0xB4B2D34110F6E75F90",
+    ]);
     const signer = await ethers.getSigner(account);
     return citadel.connect(signer);
   }

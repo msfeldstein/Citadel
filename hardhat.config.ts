@@ -31,7 +31,6 @@ const config: HardhatUserConfig = {
         process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
     },
     hardhat: {
-      gas: 1100000,
       forking: {
         url: process.env.MAINNET_URL || "",
         blockNumber: 13753843,

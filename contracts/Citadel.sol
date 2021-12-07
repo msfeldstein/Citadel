@@ -3,10 +3,37 @@ pragma solidity ^0.8.0;
 
 import "hardhat/console.sol";
 
+struct Layer {
+    string name;
+    bytes hexString;
+}
+
+struct Color {
+    string hexString;
+    uint256 alpha;
+    uint256 red;
+    uint256 green;
+    uint256 blue;
+}
+
 interface IRunners {
     function ownerOf(uint256 tokenId) external view returns (address owner);
 
+    function getDna(uint256 _tokenId) external view returns (uint256);
+
     function balanceOf(address owner) external view returns (uint256 balance);
+}
+
+interface IRunnerDNA {
+    function getTokenData(uint256 _dna)
+        external
+        view
+        returns (
+            Layer[13] memory tokenLayers,
+            Color[8][13] memory tokenPalettes,
+            uint8 numTokenLayers,
+            string[13] memory traitTypes
+        );
 }
 
 contract Citadel {
@@ -50,6 +77,16 @@ contract Citadel {
             IRunners(RUNNER_CONTRACT).ownerOf(runnerId) == msg.sender,
             "Runner Impersonation"
         );
+        uint256 dna = IRunners(RUNNER_CONTRACT).getDna(runnerId);
+        console.log(dna);
+        (
+            Layer[13] memory tokenLayers,
+            Color[8][13] memory tokenPalettes,
+            uint8 numTokenLayers,
+            string[13] memory traitTypes
+        ) = IRunnerDNA(DNA_CONTRACT).getTokenData(dna);
+        console.log(tokenLayers[0].name);
+
         // Get the hash of the senders address, the runners tokenId, and the key passed
         // This way the key will be different for everyone and they can't just share
         bytes32 sig = keccak256(abi.encodePacked(msg.sender, runnerId, key));

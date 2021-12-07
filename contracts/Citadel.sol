@@ -19,14 +19,14 @@ contract Citadel {
 
     struct SecurityState {
         uint8 camerasActive;
-        bool securityApparatusActive;
-        bool gasDeployed;
-        bool securityForcesDeployed;
+        bool securityApparatusDeactivated;
+        bool gasCleared;
+        bool securityForcesDefeated;
     }
 
     mapping(uint256 => bool) cameraJammers;
 
-    SecurityState public securityState = SecurityState(10, true, true, true);
+    SecurityState public securityState = SecurityState(10, false, false, false);
 
     function jamCamera(uint256 runnerId) public {
         require(
@@ -35,6 +35,7 @@ contract Citadel {
         );
         require(!cameraJammers[runnerId], "Camera is already down");
         require(securityState.camerasActive > 0, "LFG already!");
+        cameraJammers[runnerId] = true;
         securityState.camerasActive--;
     }
 
@@ -49,7 +50,7 @@ contract Citadel {
             IRunners(RUNNER_CONTRACT).ownerOf(runnerId) == msg.sender,
             "Runner Impersonation"
         );
-        // Get the hash of the senders address, the runners tokenId, and the key passedp
+        // Get the hash of the senders address, the runners tokenId, and the key passed
         // This way the key will be different for everyone and they can't just share
         bytes32 sig = keccak256(abi.encodePacked(msg.sender, runnerId, key));
         uint256 bits = uint256(sig);
@@ -57,18 +58,45 @@ contract Citadel {
         uint256 mask = 0x03; // 0x03 is 00000011, aka a byte with the last 2 bits set to true
         require(bits & mask == 0, "INVALID_CODE/ip has been logged");
 
-        securityState.securityApparatusActive = false;
+        securityState.securityApparatusDeactivated = true;
     }
 
     function securityApparatusDeactivated() public view returns (bool) {
-        return !securityState.securityApparatusActive;
+        return securityState.securityApparatusDeactivated;
+    }
+
+    function hasDuplicate(uint256[10] memory A) internal pure returns (bool) {
+        for (uint256 i = 0; i < A.length - 1; i++) {
+            for (uint256 j = i + 1; j < A.length; j++) {
+                if (A[i] == A[j]) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    function summonHorde(uint256[10] calldata runnerIDs) public {
+        for (uint256 i = 0; i < 10; i++) {
+            uint256 runnerID = runnerIDs[i];
+            require(
+                IRunners(RUNNER_CONTRACT).ownerOf(runnerID) == msg.sender,
+                "Runner Impersonation"
+            );
+        }
+        require(!hasDuplicate(runnerIDs), "Doublerunner");
+        securityState.securityForcesDefeated = true;
+    }
+
+    function securityForcesDefeated() public view returns (bool) {
+        return securityState.securityForcesDefeated;
     }
 
     function vulnerable() public view returns (bool) {
         return
             securityState.camerasActive == 0 &&
-            !securityState.securityApparatusActive &&
-            !securityState.gasDeployed &&
-            !securityState.securityForcesDeployed;
+            securityState.securityApparatusDeactivated &&
+            securityState.gasCleared &&
+            securityState.securityForcesDefeated;
     }
 }
